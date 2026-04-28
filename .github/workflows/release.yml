@@ -53,6 +53,7 @@ jobs:
           args: ${{ matrix.platform == 'macos-latest' && '--target universal-apple-darwin' || '' }}
 
   release-android:
+    needs: release
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
@@ -90,15 +91,22 @@ jobs:
       - name: Initialize Android project
         run: npm run tauri -- android init --ci
 
-      - name: Build and Package Tauri App (Android)
-        uses: tauri-apps/tauri-action@v0
+      - name: Build Android App
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+        run: npm run tauri -- android build --apk
+
+      - name: Extract Version
+        id: extract_version
+        run: |
+          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Upload APK to Release
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
         with:
-          tagName: app-v__VERSION__
-          releaseName: 'Network Chat v__VERSION__'
-          releaseBody: 'Android app installer now avaible in the beta.'
-          releaseDraft: true
-          prerelease: false
-          args: --target android
+          tag_name: app-v${{ steps.extract_version.outputs.VERSION }}
+          files: |
+            src-tauri/gen/android/app/build/outputs/apk/**/*.apk
