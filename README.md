@@ -55,12 +55,18 @@ npm install
 npm run tauri dev
 ```
 
-**3. Build and Install (.deb Package)**
+**3. Build and Install (.deb Package on Linux)**
 To compile a production-ready Debian package and install it system-wide:
 ```bash
 make install
 ```
 *(This command automatically runs `make build` and then uses `dpkg` and `apt` to install the `.deb` file).*
+
+**4. Generate Multi-Platform Installers (Windows, Mac, Linux)**
+This project comes with an automated **GitHub Actions CI/CD Pipeline**. To generate installers for all major operating systems:
+1. Push your code to GitHub.
+2. Create and push a new Git tag (e.g., `git tag v1.0.0 && git push origin v1.0.0`).
+3. GitHub Actions will automatically launch cloud servers to natively compile the app and attach the `.exe`, `.dmg`, and `.deb` installers to your repository's Releases page!
 
 ## 🧹 Make Commands
 - `make build` - Packages the application into a `.deb` file without installing.
