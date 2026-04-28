@@ -21,13 +21,19 @@
     </div>
 
     <div id="chat-screen" class="screen">
-      <aside class="sidebar">
-        <h2>Active Peers</h2>
+      <div id="mobile-backdrop" class="mobile-backdrop hidden"></div>
+      <aside class="sidebar" id="sidebar">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 1.5rem 0 1.5rem;">
+          <h2 style="padding: 0; border: none;">Active Peers</h2>
+          <button id="close-sidebar-btn" class="mobile-only-btn" style="background: transparent; padding: 0.5rem; box-shadow: none;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
         <ul id="peer-list">
           <!-- Peers will be injected here -->
         </ul>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem;">
-          <h2>Active Groups</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding: 0 1.5rem;">
+          <h2 style="padding: 0; border: none;">Active Groups</h2>
           <button id="create-group-btn" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;">+ New</button>
         </div>
         <ul id="group-list" class="peer-list">
@@ -36,8 +42,13 @@
       </aside>
       
       <main class="chat-area">
-        <header class="chat-header" style="display: flex; justify-content: space-between; align-items: center;">
-          <h2 id="current-peer-name">Select a peer to chat</h2>
+        <header class="chat-header" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <button id="sidebar-toggle-btn" style="background: transparent; padding: 0.5rem; box-shadow: none; border: 1px solid rgba(255,255,255,0.1);">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            </button>
+            <h2 id="current-peer-name" style="margin: 0; font-size: 1.2rem;">Select a peer to chat</h2>
+          </div>
           <div id="group-actions" class="hidden">
             <button id="add-member-btn" style="font-size: 0.8rem; padding: 0.3rem;">Add Member</button>
             <button id="remove-member-btn" style="font-size: 0.8rem; padding: 0.3rem; margin-left: 0.5rem; background: rgba(255,50,50,0.2);">Remove Member</button>

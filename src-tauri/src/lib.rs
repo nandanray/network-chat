@@ -260,12 +260,13 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
         .run(|app_handle, event| match event {
+            tauri::RunEvent::ExitRequested { .. } => {
+                let state: tauri::State<'_, Arc<NetworkState>> = app_handle.state();
+                let _ = state.mdns.shutdown();
+            }
             tauri::RunEvent::Exit => {
-                // By getting the state and explicitly dropping it, the mdns ServiceDaemon 
-                // is dropped and sends a Goodbye packet instantly.
-                let _state: tauri::State<'_, Arc<NetworkState>> = app_handle.state();
-                // We don't strictly need to do anything since process exit will kill it,
-                // but dropping it gracefully helps mdns-sd.
+                let state: tauri::State<'_, Arc<NetworkState>> = app_handle.state();
+                let _ = state.mdns.shutdown();
             }
             _ => {}
         });

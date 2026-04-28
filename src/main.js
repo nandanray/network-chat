@@ -42,6 +42,39 @@ const availablePeersList = document.getElementById('available-peers-list');
 const cancelAddMemberBtn = document.getElementById('cancel-add-member-btn');
 const confirmAddMemberBtn = document.getElementById('confirm-add-member-btn');
 
+const sidebar = document.getElementById('sidebar');
+const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+const mobileBackdrop = document.getElementById('mobile-backdrop');
+
+function closeSidebar() {
+  if (window.innerWidth <= 768) {
+    sidebar.classList.remove('open');
+    mobileBackdrop.classList.add('hidden');
+  }
+}
+
+sidebarToggleBtn.addEventListener('click', () => {
+  if (window.innerWidth <= 768) {
+    sidebar.classList.add('open');
+    mobileBackdrop.classList.remove('hidden');
+  } else {
+    sidebar.classList.toggle('collapsed');
+  }
+});
+
+closeSidebarBtn.addEventListener('click', closeSidebar);
+mobileBackdrop.addEventListener('click', closeSidebar);
+
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 768) {
+    sidebar.classList.remove('open');
+    mobileBackdrop.classList.add('hidden');
+  } else {
+    sidebar.classList.remove('collapsed');
+  }
+});
+
 setupForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   myUsername = usernameInput.value.trim();
@@ -85,6 +118,7 @@ function renderPeers() {
       renderPeers();
       if(groups.length > 0) renderGroups();
       renderMessages();
+      closeSidebar();
     });
     
     peerList.appendChild(li);
@@ -320,6 +354,7 @@ function renderGroups() {
       renderPeers();
       renderGroups();
       renderMessages();
+      closeSidebar();
     });
     
     groupList.appendChild(li);
