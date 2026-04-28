@@ -101,7 +101,10 @@ function renderPeers() {
     const badgeHtml = unread > 0 ? `<div class="unread-badge">${unread}</div>` : '';
 
     li.innerHTML = `
-      <div class="peer-avatar">${initial}</div>
+      <div class="peer-avatar">
+        ${initial}
+        <div class="status-indicator"></div>
+      </div>
       <div class="peer-info">
         <div class="peer-name">${peer.id}</div>
         ${badgeHtml}
@@ -167,6 +170,7 @@ function renderMessages() {
       div.innerHTML = `
         ${senderHtml}
         <div class="message-content"></div>
+        <div class="message-time">${msg.time}</div>
       `;
       div.querySelector('.message-content').textContent = msg.text;
     }
@@ -207,7 +211,11 @@ chatForm.addEventListener('submit', async (e) => {
         await invoke('send_message', { peerId: currentPeerId, text });
       }
       if (!messagesMap[currentPeerId]) messagesMap[currentPeerId] = [];
-      messagesMap[currentPeerId].push({ sender: myUsername, text });
+      messagesMap[currentPeerId].push({ 
+        sender: myUsername, 
+        text,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
       messageInput.value = '';
       renderMessages();
     } catch (err) {
@@ -227,7 +235,13 @@ attachBtn.addEventListener('click', async () => {
       await invoke('send_file', { peerId: currentPeerId, filePath: path });
       const fileName = path.split('/').pop().split('\\').pop();
       if (!messagesMap[currentPeerId]) messagesMap[currentPeerId] = [];
-      messagesMap[currentPeerId].push({ sender: myUsername, isFile: true, fileName, path });
+      messagesMap[currentPeerId].push({ 
+        sender: myUsername, 
+        isFile: true, 
+        fileName, 
+        path,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
       renderMessages();
     }
   } catch (err) {
@@ -278,7 +292,11 @@ listen('peer-update', (event) => {
 listen('chat-message', (event) => {
   const { sender, text } = event.payload;
   if (!messagesMap[sender]) messagesMap[sender] = [];
-  messagesMap[sender].push({ sender, text });
+  messagesMap[sender].push({ 
+    sender, 
+    text,
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
   if (currentPeerId === sender) {
     renderMessages();
   } else {
@@ -336,7 +354,10 @@ function renderGroups() {
     const badgeHtml = unread > 0 ? `<div class="unread-badge">${unread}</div>` : '';
 
     li.innerHTML = `
-      <div class="peer-avatar" style="background: rgba(255, 200, 100, 0.2); color: #ffd166;">${initial}</div>
+      <div class="peer-avatar" style="background: rgba(255, 200, 100, 0.2); color: #ffd166;">
+        ${initial}
+        <div class="status-indicator" style="background: #fbbf24;"></div>
+      </div>
       <div class="peer-info">
         <div class="peer-name">${group.name}</div>
         <div style="font-size: 0.7rem; opacity: 0.7;">${group.members.length} members</div>
@@ -446,7 +467,11 @@ removeMemberBtn.addEventListener('click', async () => {
 listen('group-message', (event) => {
   const { sender, group_id, text } = event.payload;
   if (!messagesMap[group_id]) messagesMap[group_id] = [];
-  messagesMap[group_id].push({ sender, text });
+  messagesMap[group_id].push({ 
+    sender, 
+    text,
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
   if (currentPeerId === group_id) {
     renderMessages();
   } else {
