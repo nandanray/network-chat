@@ -96,6 +96,24 @@ jobs:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
         run: npm run tauri -- android build --apk
 
+      - name: Sign Android APK
+        run: |
+          # Generate a temporary keystore for signing
+          keytool -genkey -v -keystore release.keystore -alias release -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=NetworkChat, OU=NetworkChat, O=NetworkChat, L=Unknown, ST=Unknown, C=Unknown" -storepass password -keypass password
+          
+          # Find apksigner in the Android SDK
+          APKSIGNER=$(find $ANDROID_HOME/build-tools -name apksigner | sort -r | head -n 1)
+          
+          # Sign the unsigned APKs
+          shopt -s globstar
+          for apk in src-tauri/gen/android/app/build/outputs/apk/**/*.apk; do
+            if [[ $apk == *"-unsigned.apk" ]]; then
+              signed_apk="${apk/-unsigned.apk/-signed.apk}"
+              $APKSIGNER sign --ks release.keystore --ks-pass pass:password --key-pass pass:password --out "$signed_apk" "$apk"
+              rm "$apk" # remove unsigned so only the signed one is uploaded
+            fi
+          done
+
       - name: Extract Version
         id: extract_version
         run: |
