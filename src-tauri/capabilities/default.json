@@ -6,17 +6,6 @@
   "permissions": [
     "core:default",
     "opener:default",
-    "dialog:default",
-    "allow-set_username",
-    "allow-send_message",
-    "allow-send_file",
-    "allow-accept_file",
-    "allow-get_peers",
-    "allow-create_group",
-    "allow-add_group_member",
-    "allow-remove_group_member",
-    "allow-send_group_message",
-    "allow-get_groups",
-    "allow-send_voice_signal"
+    "dialog:default"
   ]
 }
