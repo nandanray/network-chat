@@ -7,9 +7,106 @@ let currentPeerId = null;
 let isGroupChat = false;
 let peers = [];
 let groups = [];
-let messagesMap = {}; // { peerId: [{ sender, text, isFile }] }
 let unreadCounts = {}; // { peerId: number }
+let messagesMap = {}; // { peerId: [{ sender, text, isFile }] }
 let myUsername = '';
+
+// Move listeners to the top to ensure they are active immediately
+listen('voice-call-signal', (event) => {
+  console.log("Received voice-call-signal:", event.payload);
+  handleVoiceSignal(event.payload);
+});
+
+listen('file-offer', (event) => {
+  const { sender, offer_id, file_name, file_size } = event.payload;
+  if (!messagesMap[sender]) messagesMap[sender] = [];
+  messagesMap[sender].push({ sender, isOffer: true, offerId: offer_id, fileName: file_name, fileSize: file_size });
+  if (currentPeerId === sender) {
+    renderMessages();
+  } else {
+    unreadCounts[sender] = (unreadCounts[sender] || 0) + 1;
+    renderPeers();
+  }
+});
+
+listen('peer-update', (event) => {
+  peers = event.payload;
+  renderPeers();
+});
+
+listen('chat-message', (event) => {
+  const { sender, text } = event.payload;
+  if (!messagesMap[sender]) messagesMap[sender] = [];
+  messagesMap[sender].push({ 
+    sender, 
+    text,
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
+  if (currentPeerId === sender) {
+    renderMessages();
+  } else {
+    unreadCounts[sender] = (unreadCounts[sender] || 0) + 1;
+    renderPeers();
+  }
+});
+
+listen('file-transfer-complete', (event) => {
+  const { sender, file_name, path } = event.payload;
+  if (!messagesMap[sender]) messagesMap[sender] = [];
+  messagesMap[sender].push({ sender, isFile: true, fileName: file_name, path });
+  if (currentPeerId === sender) {
+    renderMessages();
+  } else {
+    unreadCounts[sender] = (unreadCounts[sender] || 0) + 1;
+    renderPeers();
+  }
+});
+
+listen('group-message', (event) => {
+  const { sender, group_id, text } = event.payload;
+  if (!messagesMap[group_id]) messagesMap[group_id] = [];
+  messagesMap[group_id].push({ 
+    sender, 
+    text,
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
+  if (currentPeerId === group_id) {
+    renderMessages();
+  } else {
+    unreadCounts[group_id] = (unreadCounts[group_id] || 0) + 1;
+    renderGroups();
+  }
+});
+
+listen('group-update', (event) => {
+  groups = event.payload;
+  if (isGroupChat && currentPeerId) {
+    const activeGroup = groups.find(g => g.id === currentPeerId);
+    if (!activeGroup) {
+      currentPeerId = null;
+      isGroupChat = false;
+      currentPeerName.textContent = 'Select a peer to chat';
+      chatForm.classList.add('hidden');
+      groupActions.classList.add('hidden');
+      messagesContainer.innerHTML = '<div class="empty-state">No messages yet.</div>';
+    }
+  }
+  renderGroups();
+});
+
+async function requestPermissions() {
+  try {
+    // Standard web way to trigger permission prompt for mic and camera
+    console.log("Requesting permissions...");
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+    // Immediately stop tracks after getting permission
+    stream.getTracks().forEach(track => track.stop());
+    console.log("Permissions granted!");
+  } catch (err) {
+    console.warn("Permissions denied or not available:", err);
+    alert("Microphone and Camera access are needed for voice calls. Please enable them in settings.");
+  }
+}
 
 // Prevent right-click context menu
 document.addEventListener('contextmenu', e => e.preventDefault());
@@ -104,6 +201,8 @@ setupForm.addEventListener('submit', async (e) => {
       setupScreen.classList.remove('active');
       chatScreen.classList.add('active');
       fetchPeers();
+      // Request permissions after joining
+      requestPermissions();
     } catch (err) {
       alert('Error setting username: ' + err);
     }
@@ -293,50 +392,7 @@ attachFolderBtn.addEventListener('click', async () => {
   }
 });
 
-// Listeners
-listen('file-offer', (event) => {
-  const { sender, offer_id, file_name, file_size } = event.payload;
-  if (!messagesMap[sender]) messagesMap[sender] = [];
-  messagesMap[sender].push({ sender, isOffer: true, offerId: offer_id, fileName: file_name, fileSize: file_size });
-  if (currentPeerId === sender) {
-    renderMessages();
-  } else {
-    unreadCounts[sender] = (unreadCounts[sender] || 0) + 1;
-    renderPeers();
-  }
-});
-listen('peer-update', (event) => {
-  peers = event.payload;
-  renderPeers();
-});
-
-listen('chat-message', (event) => {
-  const { sender, text } = event.payload;
-  if (!messagesMap[sender]) messagesMap[sender] = [];
-  messagesMap[sender].push({ 
-    sender, 
-    text,
-    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  });
-  if (currentPeerId === sender) {
-    renderMessages();
-  } else {
-    unreadCounts[sender] = (unreadCounts[sender] || 0) + 1;
-    renderPeers();
-  }
-});
-
-listen('file-transfer-complete', (event) => {
-  const { sender, file_name, path } = event.payload;
-  if (!messagesMap[sender]) messagesMap[sender] = [];
-  messagesMap[sender].push({ sender, isFile: true, fileName: file_name, path });
-  if (currentPeerId === sender) {
-    renderMessages();
-  } else {
-    unreadCounts[sender] = (unreadCounts[sender] || 0) + 1;
-    renderPeers();
-  }
-});
+// Listeners moved to top for better reliability
 
 async function fetchPeers() {
   if (!myUsername) return;
@@ -486,38 +542,7 @@ removeMemberBtn.addEventListener('click', async () => {
   }
 });
 
-listen('group-message', (event) => {
-  const { sender, group_id, text } = event.payload;
-  if (!messagesMap[group_id]) messagesMap[group_id] = [];
-  messagesMap[group_id].push({ 
-    sender, 
-    text,
-    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  });
-  if (currentPeerId === group_id) {
-    renderMessages();
-  } else {
-    unreadCounts[group_id] = (unreadCounts[group_id] || 0) + 1;
-    renderGroups();
-  }
-});
-
-listen('group-update', (event) => {
-  groups = event.payload;
-  if (isGroupChat && currentPeerId) {
-    const activeGroup = groups.find(g => g.id === currentPeerId);
-    if (!activeGroup) {
-      // We were removed!
-      currentPeerId = null;
-      isGroupChat = false;
-      currentPeerName.textContent = 'Select a peer to chat';
-      chatForm.classList.add('hidden');
-      groupActions.classList.add('hidden');
-      messagesContainer.innerHTML = '<div class="empty-state">No messages yet.</div>';
-    }
-  }
-  renderGroups();
-});
+// Listeners moved to top for better reliability
 
 // Voice Call Logic
 async function initPeerConnection(partnerId) {
@@ -667,10 +692,6 @@ function closeCall() {
 startCallBtn.addEventListener('click', startCall);
 acceptCallBtn.addEventListener('click', acceptCall);
 hangupCallBtn.addEventListener('click', hangup);
-
-listen('voice-call-signal', (event) => {
-  handleVoiceSignal(event.payload);
-});
 
 setInterval(() => {
   fetchPeers();

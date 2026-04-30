@@ -1,0 +1,17 @@
+{
+  "identifier": "main-permissions",
+  "description": "Permissions for all custom commands",
+  "commands": [
+    "set_username",
+    "send_message",
+    "send_file",
+    "accept_file",
+    "get_peers",
+    "create_group",
+    "add_group_member",
+    "remove_group_member",
+    "send_group_message",
+    "get_groups",
+    "send_voice_signal"
+  ]
+}
