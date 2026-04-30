@@ -587,6 +587,7 @@ async function initPeerConnection(partnerId) {
 async function startCall() {
   if (!currentPeerId) return;
   
+  window._pendingCandidates = [];
   callPartnerId = currentPeerId;
   callOverlay.classList.remove('hidden');
   callStatus.textContent = "Calling...";
@@ -627,14 +628,31 @@ async function handleVoiceSignal(payload) {
     // We don't init connection yet, wait for accept
     const offer = new RTCSessionDescription(signalData);
     window._pendingOffer = offer;
+    window._pendingCandidates = [];
 
   } else if (signal_type === 'answer') {
     if (!peerConnection) return;
     await peerConnection.setRemoteDescription(new RTCSessionDescription(signalData));
+    
+    if (window._pendingCandidates) {
+      for (const c of window._pendingCandidates) {
+        try {
+          await peerConnection.addIceCandidate(new RTCIceCandidate(c));
+        } catch (e) {
+          console.error("Error adding queued candidate", e);
+        }
+      }
+      window._pendingCandidates = [];
+    }
+
     callStatus.textContent = "Connected";
     callActive = true;
   } else if (signal_type === 'candidate') {
-    if (!peerConnection) return;
+    if (!peerConnection || !peerConnection.remoteDescription) {
+      window._pendingCandidates = window._pendingCandidates || [];
+      window._pendingCandidates.push(signalData);
+      return;
+    }
     try {
       await peerConnection.addIceCandidate(new RTCIceCandidate(signalData));
     } catch (e) {
@@ -664,6 +682,17 @@ async function acceptCall() {
     data: JSON.stringify(answer)
   });
   
+  if (window._pendingCandidates) {
+    for (const c of window._pendingCandidates) {
+      try {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(c));
+      } catch (e) {
+        console.error("Error adding queued candidate", e);
+      }
+    }
+    window._pendingCandidates = [];
+  }
+  
   callStatus.textContent = "Connected";
   callActive = true;
   delete window._pendingOffer;
@@ -691,6 +720,8 @@ function closeCall() {
   }
   callActive = false;
   callPartnerId = null;
+  window._pendingCandidates = [];
+  delete window._pendingOffer;
   callOverlay.classList.add('hidden');
   remoteAudio.srcObject = null;
 }

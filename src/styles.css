@@ -1,19 +1,19 @@
 :root {
-  --bg-color: #0f172a;
-  --bg-gradient-1: #1e1b4b;
-  --bg-gradient-2: #0f172a;
-  --panel-bg: rgba(15, 23, 42, 0.4);
-  --primary: #8b5cf6;
-  --primary-hover: #7c3aed;
-  --secondary: #ec4899;
+  --bg-color: #0b0f19;
+  --bg-gradient-1: #1a1635;
+  --bg-gradient-2: #0b0f19;
+  --panel-bg: rgba(11, 15, 25, 0.55);
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --secondary: #f43f5e;
   --text: #f8fafc;
-  --text-muted: #94a3b8;
-  --border: rgba(255, 255, 255, 0.08);
-  --message-mine: linear-gradient(135deg, #6366f1, #8b5cf6);
-  --message-peer: rgba(30, 41, 59, 0.8);
-  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 20px 40px -10px rgba(0, 0, 0, 0.6);
-  --glass-blur: blur(24px);
+  --text-muted: #cbd5e1;
+  --border: rgba(255, 255, 255, 0.06);
+  --message-mine: linear-gradient(135deg, #4f46e5, #7c3aed);
+  --message-peer: rgba(30, 41, 59, 0.65);
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  --glass-blur: blur(32px);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -89,13 +89,13 @@ body {
 }
 
 .glass-card h1 {
-  font-size: 2.25rem;
+  font-size: 2.5rem;
   margin-bottom: 0.5rem;
-  background: linear-gradient(to right, #38bdf8, #818cf8, #c084fc);
+  background: linear-gradient(135deg, #a5b4fc, #818cf8, #c084fc);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: -0.5px;
 }
 
@@ -144,9 +144,9 @@ button {
 }
 
 button:hover {
-  background-image: linear-gradient(to right, var(--primary-hover), #9333ea);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 12px -2px rgba(139, 92, 246, 0.4);
+  background-image: linear-gradient(to right, var(--primary-hover), #7c3aed);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px -4px rgba(99, 102, 241, 0.5);
 }
 
 button:active {
@@ -221,18 +221,23 @@ button:active {
 }
 
 .peer-avatar {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #38bdf8, #818cf8);
+  background: linear-gradient(135deg, #6366f1, #c084fc);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: 1.2rem;
+  font-weight: 700;
+  font-size: 1.25rem;
   box-shadow: var(--shadow-sm);
-  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
   position: relative;
+  transition: transform 0.3s ease;
+}
+
+.peer-item:hover .peer-avatar {
+  transform: scale(1.05);
 }
 
 .status-indicator {
@@ -591,14 +596,16 @@ input[type="checkbox"] {
 
 /* Call Styles */
 .call-card {
-  width: 320px;
+  width: 340px;
   padding: 3rem 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1.5rem;
   border-radius: 2rem;
-  background: rgba(15, 23, 42, 0.8) !important;
+  background: rgba(11, 15, 25, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8);
 }
 
 .call-avatar {
