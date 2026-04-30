@@ -1,6 +1,6 @@
 {
   "productName": "network-chat",
-  "version": "0.1.13",
+  "version": "0.1.15",
   "identifier": "com.nandan.networkchat",
   "build": {
     "beforeDevCommand": "npm run dev",

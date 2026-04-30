@@ -91,6 +91,12 @@ jobs:
       - name: Initialize Android project
         run: npm run tauri -- android init --ci
 
+      - name: Inject Android Permissions
+        run: |
+          MANIFEST_PATH="src-tauri/gen/android/app/src/main/AndroidManifest.xml"
+          PERMISSIONS="<uses-permission android:name=\"android.permission.RECORD_AUDIO\"/>\n    <uses-permission android:name=\"android.permission.CAMERA\"/>\n    <uses-permission android:name=\"android.permission.MODIFY_AUDIO_SETTINGS\"/>\n    <uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\"/>\n    <uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\"/>"
+          sed -i "/<\/manifest>/i \    $PERMISSIONS\n" $MANIFEST_PATH
+
       - name: Build Android App
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}

@@ -5,7 +5,6 @@
   "permissions": [
     "core:default",
     "opener:default",
-    "dialog:default",
-    "allow-main-commands"
+    "dialog:default"
   ]
 }
