@@ -50,7 +50,7 @@ jobs:
           releaseBody: 'Android app installer now avaible in the beta.'
           releaseDraft: true
           prerelease: false
-          args: ${{ matrix.platform == 'macos-latest' && '--target universal-apple-darwin' || '' }}
+          args: ""
 
   release-android:
     needs: release
