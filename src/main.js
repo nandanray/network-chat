@@ -159,6 +159,12 @@ let peerConnection = null;
 let localStream = null;
 let callActive = false;
 let callPartnerId = null;
+let isVideoCall = false;
+
+const startVideoCallBtn = document.getElementById('start-video-call-btn');
+const videoContainer = document.getElementById('video-container');
+const localVideo = document.getElementById('local-video');
+const remoteVideo = document.getElementById('remote-video');
 
 const rtcConfig = {
   iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -551,7 +557,7 @@ removeMemberBtn.addEventListener('click', async () => {
 // Listeners moved to top for better reliability
 
 // Voice Call Logic
-async function initPeerConnection(partnerId) {
+async function initPeerConnection(partnerId, video = false) {
   if (peerConnection) {
     peerConnection.close();
   }
@@ -569,41 +575,57 @@ async function initPeerConnection(partnerId) {
   };
 
   peerConnection.ontrack = (event) => {
-    remoteAudio.srcObject = event.streams[0];
+    if (event.track.kind === 'video') {
+      remoteVideo.srcObject = event.streams[0];
+    } else if (event.track.kind === 'audio') {
+      remoteAudio.srcObject = event.streams[0];
+    }
   };
 
   try {
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: video });
+    if (video) {
+      localVideo.srcObject = localStream;
+      videoContainer.classList.remove('hidden');
+      callAvatar.classList.add('hidden');
+    } else {
+      videoContainer.classList.add('hidden');
+      callAvatar.classList.remove('hidden');
+    }
+
     localStream.getTracks().forEach(track => {
       peerConnection.addTrack(track, localStream);
     });
   } catch (err) {
-    console.error("Error accessing microphone:", err);
-    alert("Microphone access is required for voice calls.");
+    console.error("Error accessing media devices:", err);
+    alert("Microphone/Camera access is required for calls.");
     hangup();
   }
 }
 
-async function startCall() {
+async function startCall(video = false) {
   if (!currentPeerId) return;
   
+  isVideoCall = video;
   window._pendingCandidates = [];
   callPartnerId = currentPeerId;
   callOverlay.classList.remove('hidden');
-  callStatus.textContent = "Calling...";
+  callStatus.textContent = video ? "Video Calling..." : "Calling...";
   callPeerName.textContent = callPartnerId;
   callAvatar.textContent = callPartnerId.charAt(0).toUpperCase();
+  acceptCallBtn.classList.remove('hidden');
   acceptCallBtn.classList.add('hidden');
   
-  await initPeerConnection(callPartnerId);
+  await initPeerConnection(callPartnerId, isVideoCall);
   
   const offer = await peerConnection.createOffer();
   await peerConnection.setLocalDescription(offer);
   
+  const dataPayload = JSON.stringify({ offer, isVideo: isVideoCall });
   invoke('send_voice_signal', {
     peerId: callPartnerId,
     signalType: 'offer',
-    data: JSON.stringify(offer)
+    data: dataPayload
   });
 }
 
@@ -618,15 +640,24 @@ async function handleVoiceSignal(payload) {
        return;
     }
     
+    let offerObj;
+    if (signalData.offer) {
+       offerObj = signalData.offer;
+       isVideoCall = signalData.isVideo;
+    } else {
+       offerObj = signalData; // older format
+       isVideoCall = false;
+    }
+    
     callPartnerId = sender;
     callOverlay.classList.remove('hidden');
-    callStatus.textContent = "Incoming Call...";
+    callStatus.textContent = isVideoCall ? "Incoming Video Call..." : "Incoming Call...";
     callPeerName.textContent = sender;
     callAvatar.textContent = sender.charAt(0).toUpperCase();
     acceptCallBtn.classList.remove('hidden');
     
     // We don't init connection yet, wait for accept
-    const offer = new RTCSessionDescription(signalData);
+    const offer = new RTCSessionDescription(offerObj);
     window._pendingOffer = offer;
     window._pendingCandidates = [];
 
@@ -670,7 +701,7 @@ async function acceptCall() {
   acceptCallBtn.classList.add('hidden');
   callStatus.textContent = "Connecting...";
   
-  await initPeerConnection(callPartnerId);
+  await initPeerConnection(callPartnerId, isVideoCall);
   await peerConnection.setRemoteDescription(window._pendingOffer);
   
   const answer = await peerConnection.createAnswer();
@@ -720,13 +751,19 @@ function closeCall() {
   }
   callActive = false;
   callPartnerId = null;
+  isVideoCall = false;
   window._pendingCandidates = [];
   delete window._pendingOffer;
   callOverlay.classList.add('hidden');
+  videoContainer.classList.add('hidden');
+  callAvatar.classList.remove('hidden');
+  remoteVideo.srcObject = null;
+  localVideo.srcObject = null;
   remoteAudio.srcObject = null;
 }
 
-startCallBtn.addEventListener('click', startCall);
+startCallBtn.addEventListener('click', () => startCall(false));
+startVideoCallBtn.addEventListener('click', () => startCall(true));
 acceptCallBtn.addEventListener('click', acceptCall);
 hangupCallBtn.addEventListener('click', hangup);
 
