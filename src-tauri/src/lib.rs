@@ -225,6 +225,25 @@ async fn send_group_message(group_id: String, text: String, state: tauri::State<
 }
 
 #[tauri::command]
+async fn send_voice_signal(peer_id: String, signal_type: String, data: String, state: tauri::State<'_, Arc<NetworkState>>) -> Result<(), String> {
+    let peer = {
+        let peers = state.peers.lock().await;
+        peers.get(&peer_id).cloned()
+    };
+
+    if let Some(peer) = peer {
+        let msg = NetworkMessage {
+            sender: state.username.lock().await.clone(),
+            msg_type: MessageType::VoiceCallSignal { signal_type, data },
+        };
+        send_to_peer(&peer.ip, peer.port, msg).await?;
+        Ok(())
+    } else {
+        Err("Peer not found".into())
+    }
+}
+
+#[tauri::command]
 async fn get_groups(state: tauri::State<'_, Arc<NetworkState>>) -> Result<Vec<network::Group>, String> {
     let my_username = state.username.lock().await.clone();
     let groups: Vec<network::Group> = state.groups.lock().await.values()
@@ -256,7 +275,7 @@ pub fn run() {
             
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![set_username, send_message, send_file, accept_file, get_peers, create_group, add_group_member, remove_group_member, send_group_message, get_groups])
+        .invoke_handler(tauri::generate_handler![set_username, send_message, send_file, accept_file, get_peers, create_group, add_group_member, remove_group_member, send_group_message, get_groups, send_voice_signal])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
         .run(|app_handle, event| match event {

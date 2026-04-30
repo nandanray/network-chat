@@ -47,6 +47,26 @@ const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
 const closeSidebarBtn = document.getElementById('close-sidebar-btn');
 const mobileBackdrop = document.getElementById('mobile-backdrop');
 
+// Voice Call Elements
+const callActions = document.getElementById('call-actions');
+const startCallBtn = document.getElementById('start-call-btn');
+const callOverlay = document.getElementById('call-overlay');
+const callStatus = document.getElementById('call-status');
+const callPeerName = document.getElementById('call-peer-name');
+const callAvatar = document.getElementById('call-avatar');
+const acceptCallBtn = document.getElementById('accept-call-btn');
+const hangupCallBtn = document.getElementById('hangup-call-btn');
+const remoteAudio = document.getElementById('remote-audio');
+
+let peerConnection = null;
+let localStream = null;
+let callActive = false;
+let callPartnerId = null;
+
+const rtcConfig = {
+  iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+};
+
 function closeSidebar() {
   if (window.innerWidth <= 768) {
     sidebar.classList.remove('open');
@@ -118,6 +138,7 @@ function renderPeers() {
       currentPeerName.textContent = `Chatting with ${peer.id}`;
       chatForm.classList.remove('hidden');
       groupActions.classList.add('hidden');
+      callActions.classList.remove('hidden');
       renderPeers();
       if(groups.length > 0) renderGroups();
       renderMessages();
@@ -372,6 +393,7 @@ function renderGroups() {
       currentPeerName.textContent = `${group.name} (Group)`;
       chatForm.classList.remove('hidden');
       groupActions.classList.remove('hidden');
+      callActions.classList.add('hidden');
       renderPeers();
       renderGroups();
       renderMessages();
@@ -495,6 +517,159 @@ listen('group-update', (event) => {
     }
   }
   renderGroups();
+});
+
+// Voice Call Logic
+async function initPeerConnection(partnerId) {
+  if (peerConnection) {
+    peerConnection.close();
+  }
+
+  peerConnection = new RTCPeerConnection(rtcConfig);
+
+  peerConnection.onicecandidate = (event) => {
+    if (event.candidate) {
+      invoke('send_voice_signal', {
+        peerId: partnerId,
+        signalType: 'candidate',
+        data: JSON.stringify(event.candidate)
+      });
+    }
+  };
+
+  peerConnection.ontrack = (event) => {
+    remoteAudio.srcObject = event.streams[0];
+  };
+
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    localStream.getTracks().forEach(track => {
+      peerConnection.addTrack(track, localStream);
+    });
+  } catch (err) {
+    console.error("Error accessing microphone:", err);
+    alert("Microphone access is required for voice calls.");
+    hangup();
+  }
+}
+
+async function startCall() {
+  if (!currentPeerId) return;
+  
+  callPartnerId = currentPeerId;
+  callOverlay.classList.remove('hidden');
+  callStatus.textContent = "Calling...";
+  callPeerName.textContent = callPartnerId;
+  callAvatar.textContent = callPartnerId.charAt(0).toUpperCase();
+  acceptCallBtn.classList.add('hidden');
+  
+  await initPeerConnection(callPartnerId);
+  
+  const offer = await peerConnection.createOffer();
+  await peerConnection.setLocalDescription(offer);
+  
+  invoke('send_voice_signal', {
+    peerId: callPartnerId,
+    signalType: 'offer',
+    data: JSON.stringify(offer)
+  });
+}
+
+async function handleVoiceSignal(payload) {
+  const { sender, signal_type, data } = payload;
+  const signalData = JSON.parse(data);
+
+  if (signal_type === 'offer') {
+    if (callActive || peerConnection) {
+       // Busy or already in a call
+       invoke('send_voice_signal', { peerId: sender, signalType: 'busy', data: '' });
+       return;
+    }
+    
+    callPartnerId = sender;
+    callOverlay.classList.remove('hidden');
+    callStatus.textContent = "Incoming Call...";
+    callPeerName.textContent = sender;
+    callAvatar.textContent = sender.charAt(0).toUpperCase();
+    acceptCallBtn.classList.remove('hidden');
+    
+    // We don't init connection yet, wait for accept
+    const offer = new RTCSessionDescription(signalData);
+    window._pendingOffer = offer;
+
+  } else if (signal_type === 'answer') {
+    if (!peerConnection) return;
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(signalData));
+    callStatus.textContent = "Connected";
+    callActive = true;
+  } else if (signal_type === 'candidate') {
+    if (!peerConnection) return;
+    try {
+      await peerConnection.addIceCandidate(new RTCIceCandidate(signalData));
+    } catch (e) {
+      console.error("Error adding ice candidate", e);
+    }
+  } else if (signal_type === 'hangup') {
+    closeCall();
+  } else if (signal_type === 'busy') {
+    callStatus.textContent = "Peer is busy";
+    setTimeout(closeCall, 2000);
+  }
+}
+
+async function acceptCall() {
+  acceptCallBtn.classList.add('hidden');
+  callStatus.textContent = "Connecting...";
+  
+  await initPeerConnection(callPartnerId);
+  await peerConnection.setRemoteDescription(window._pendingOffer);
+  
+  const answer = await peerConnection.createAnswer();
+  await peerConnection.setLocalDescription(answer);
+  
+  invoke('send_voice_signal', {
+    peerId: callPartnerId,
+    signalType: 'answer',
+    data: JSON.stringify(answer)
+  });
+  
+  callStatus.textContent = "Connected";
+  callActive = true;
+  delete window._pendingOffer;
+}
+
+function hangup() {
+  if (callPartnerId) {
+    invoke('send_voice_signal', {
+      peerId: callPartnerId,
+      signalType: 'hangup',
+      data: ''
+    });
+  }
+  closeCall();
+}
+
+function closeCall() {
+  if (peerConnection) {
+    peerConnection.close();
+    peerConnection = null;
+  }
+  if (localStream) {
+    localStream.getTracks().forEach(track => track.stop());
+    localStream = null;
+  }
+  callActive = false;
+  callPartnerId = null;
+  callOverlay.classList.add('hidden');
+  remoteAudio.srcObject = null;
+}
+
+startCallBtn.addEventListener('click', startCall);
+acceptCallBtn.addEventListener('click', acceptCall);
+hangupCallBtn.addEventListener('click', hangup);
+
+listen('voice-call-signal', (event) => {
+  handleVoiceSignal(event.payload);
 });
 
 setInterval(() => {

@@ -589,3 +589,105 @@ input[type="checkbox"] {
   }
 }
 
+/* Call Styles */
+.call-card {
+  width: 320px;
+  padding: 3rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  border-radius: 2rem;
+  background: rgba(15, 23, 42, 0.8) !important;
+}
+
+.call-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-weight: 700;
+  box-shadow: 0 0 30px rgba(139, 92, 246, 0.4);
+  margin-bottom: 0.5rem;
+  animation: pulse-avatar 2s infinite;
+}
+
+@keyframes pulse-avatar {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+  50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(236, 72, 153, 0.4); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+}
+
+#call-status {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+}
+
+#call-peer-name {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+}
+
+.call-actions {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.call-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: var(--shadow-lg);
+}
+
+.call-btn.accept {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.call-btn.accept:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.5);
+}
+
+.call-btn.hangup {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+}
+
+.call-btn.hangup:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.5);
+}
+
+.call-btn svg {
+  width: 28px;
+  height: 28px;
+}
+
+#start-call-btn:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: rgba(139, 92, 246, 0.1);
+}
+
+#call-actions.hidden {
+  display: none;
+}
+

@@ -36,6 +36,7 @@ pub enum MessageType {
     FileStart { offer_id: String, file_name: String, file_size: u64 },
     GroupMessage { group_id: String, text: String },
     GroupUpdate { group: Group },
+    VoiceCallSignal { signal_type: String, data: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -180,6 +181,9 @@ async fn handle_connection(socket: &mut TcpStream, _addr: SocketAddr, app: AppHa
                 }
                 let _ = app.emit("file-transfer-complete", serde_json::json!({ "sender": msg.sender, "file_name": file_name, "path": save_path }));
             }
+        }
+        MessageType::VoiceCallSignal { signal_type, data } => {
+            let _ = app.emit("voice-call-signal", serde_json::json!({ "sender": msg.sender, "signal_type": signal_type, "data": data }));
         }
     }
 }
