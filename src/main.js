@@ -209,6 +209,12 @@ setupForm.addEventListener('submit', async (e) => {
   }
 });
 
+// Request permissions on startup
+window.addEventListener('DOMContentLoaded', () => {
+  // Wait a bit to ensure everything is loaded
+  setTimeout(requestPermissions, 1000);
+});
+
 function renderPeers() {
   peerList.innerHTML = '';
   peers.forEach(peer => {
