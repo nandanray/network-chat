@@ -30,4 +30,5 @@ dirs = "6.0.0"
 tauri-plugin-dialog = "2.7.0"
 zip = "8.6.0"
 walkdir = "2.5.0"
+webkit2gtk = { version = "0.19", features = ["v2_16"] }
 

@@ -96,15 +96,30 @@ listen('group-update', (event) => {
 
 async function requestPermissions() {
   try {
-    // Standard web way to trigger permission prompt for mic and camera
-    console.log("Requesting permissions...");
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-    // Immediately stop tracks after getting permission
-    stream.getTracks().forEach(track => track.stop());
-    console.log("Permissions granted!");
+    console.log("Requesting audio and video permissions...");
+    // Try to get both first
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+      stream.getTracks().forEach(track => track.stop());
+      console.log("Audio and Video permissions granted!");
+      return;
+    } catch (e) {
+      console.warn("Could not get both audio and video, trying audio only:", e);
+    }
+
+    // Try audio only if both failed
+    const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioStream.getTracks().forEach(track => track.stop());
+    console.log("Audio permission granted!");
   } catch (err) {
-    console.warn("Permissions denied or not available:", err);
-    alert("Microphone and Camera access are needed for voice calls. Please enable them in settings.");
+    console.error("Permissions denied or no media devices available:", err);
+    // Don't alert on every startup if it's just a missing device, 
+    // but the user wanted a "fix", so we'll keep the alert but make it more helpful.
+    if (err.name === 'NotFoundError') {
+      console.warn("No camera or microphone found.");
+    } else {
+      alert("Microphone/Camera access is needed for calls. If you are on Linux, we've added a fix to the backend to grant these by default. Please restart the app.");
+    }
   }
 }
 

@@ -19,7 +19,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; media-src 'self' blob: data:;"
+      "csp": "default-src 'self'; connect-src 'self' stun:*; media-src 'self' blob: data:; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
     }
   },
   "bundle": {

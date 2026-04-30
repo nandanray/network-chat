@@ -5,6 +5,8 @@ use std::sync::Arc;
 use tauri::{AppHandle, Manager};
 use tokio::io::AsyncWriteExt;
 use uuid::Uuid;
+#[cfg(target_os = "linux")]
+use webkit2gtk::traits::*;
 
 #[tauri::command]
 async fn set_username(name: String, _app: AppHandle, state: tauri::State<'_, Arc<NetworkState>>) -> Result<(), String> {
@@ -261,6 +263,21 @@ pub fn run() {
             let app_handle = app.handle().clone();
             let state = Arc::new(NetworkState::new());
             app.manage(state.clone());
+            
+            #[cfg(target_os = "linux")]
+            {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.with_webview(|webview| {
+                        use webkit2gtk::traits::WebViewExt;
+                        let webview = webview.inner();
+                        webview.connect_permission_request(|_webview, request| {
+                            use webkit2gtk::traits::PermissionRequestExt;
+                            request.allow();
+                            true
+                        });
+                    });
+                }
+            }
             
             let state_clone1 = state.clone();
             let app_handle_clone = app_handle.clone();
