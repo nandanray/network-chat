@@ -1,6 +1,6 @@
 {
   "productName": "network-chat",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "identifier": "com.nandan.networkchat",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -9,7 +9,7 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "withGlobalTauri": false,
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "Network Chat",
